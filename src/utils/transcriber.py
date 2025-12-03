@@ -9,7 +9,7 @@ import soundfile as sf
 import librosa
 import torchaudio
 from tqdm import tqdm
-import pyaudio as pa
+# import pyaudio as pa  # Google Colab 호환성을 위해 주석 처리
 import torch
 import numpy as np
 import nemo.collections.asr as nemo_asr
@@ -25,7 +25,7 @@ from denoiser import pretrained
 from .audio_dataset import AudioDataset
 from .audio_utils import AudioChunkIterator
 from .decoder import ChunkBufferDecoder
-from .microphone import Microphone
+# from .microphone import Microphone  # Google Colab 호환성을 위해 주석 처리
 
 def load_asr_model(model_path, device):
     return nemo_asr.models.EncDecCTCModelBPE.restore_from(model_path, map_location=device)
@@ -93,8 +93,9 @@ class DenoiseTranscriber:
                                         buffer_len_in_secs=self.buffer_len_in_secs, 
                                         denoise_dry=self.denoiser_dry)
         
-        if self.mode == 'microphone':
-            self.microphone = Microphone(self.sample_rate, self.chunk_len)
+        # Google Colab 호환성을 위해 마이크 모드 비활성화
+        # if self.mode == 'microphone':
+        #     self.microphone = Microphone(self.sample_rate, self.chunk_len)
 
     def transcribe(self, audio_path=None, manifest_path=None, inference_result_path='inference_result.txt', callback=None):
         if self.mode == 'file':
@@ -126,24 +127,28 @@ class DenoiseTranscriber:
                 assert audio_path is not None
                 transcription = self.transcribe_single_file(audio_path, callback=callback)
 
+        # Google Colab 호환성을 위해 마이크 모드 비활성화
+        # elif self.mode == 'microphone':
+        #     self.microphone.start_stream(self.transcribe_microphone_data)
+        #     self.microphone.run()
+        #     self.microphone.close()
         elif self.mode == 'microphone':
-            self.microphone.start_stream(self.transcribe_microphone_data)
-            self.microphone.run()
-            self.microphone.close()
+            raise NotImplementedError("마이크 모드는 Google Colab에서 지원되지 않습니다. --mode file을 사용하세요.")
                 
-    def transcribe_microphone_data(self, in_data, frame_count=None, time_info=None, status=None, callback=None):
-        signal = np.frombuffer(in_data, dtype=np.int16)
-        self.sampbuffer[:-len(signal)] = self.sampbuffer[len(signal):]
-        self.sampbuffer[-len(signal):] = signal
-        transcription = self.asr_decoder.transcribe_signal(self.sampbuffer)
-        os.system('cls' if os.name =='nt' else 'clear')
-        if callback is not None:
-            callback(transcription)
-            print(transcription)
-        else:
-            print("Press 'q' and Enter to stop the microphone: ")
-            print(transcription)
-            return (in_data, pa.paContinue)
+    # Google Colab 호환성을 위해 마이크 관련 메서드 비활성화
+    # def transcribe_microphone_data(self, in_data, frame_count=None, time_info=None, status=None, callback=None):
+    #     signal = np.frombuffer(in_data, dtype=np.int16)
+    #     self.sampbuffer[:-len(signal)] = self.sampbuffer[len(signal):]
+    #     self.sampbuffer[-len(signal):] = signal
+    #     transcription = self.asr_decoder.transcribe_signal(self.sampbuffer)
+    #     os.system('cls' if os.name =='nt' else 'clear')
+    #     if callback is not None:
+    #         callback(transcription)
+    #         print(transcription)
+    #     else:
+    #         print("Press 'q' and Enter to stop the microphone: ")
+    #         print(transcription)
+    #         return (in_data, pa.paContinue)
 
     def transcribe_single_file(self, audio_path=None, callback=None):
         assert audio_path is not None
