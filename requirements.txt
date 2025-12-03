@@ -1,6 +1,6 @@
 Cython
-nemo_toolkit[all]==1.21
-PyAudio
+nemo_toolkit[asr]
+#PyAudio
 julius
 datasets
 ipywidgets
